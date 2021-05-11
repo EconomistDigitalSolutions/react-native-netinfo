@@ -17,6 +17,7 @@ import androidx.core.net.ConnectivityManagerCompat;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
+import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 import com.reactnativecommunity.netinfo.types.CellularGeneration;
@@ -59,8 +60,8 @@ abstract class ConnectivityReceiver {
 
     abstract void unregister();
 
-    public void getCurrentState(@Nullable final String requestedInterface, final Promise promise) {
-        promise.resolve(createConnectivityEventMap(requestedInterface));
+    public void getCurrentState(@Nullable final String requestedInterface, @Nullable final ReadableMap configuration, final Promise promise) {
+        promise.resolve(createConnectivityEventMap(requestedInterface, configuration));
     }
 
     public void setIsInternetReachableOverride(boolean isInternetReachableOverride) {
@@ -105,10 +106,10 @@ abstract class ConnectivityReceiver {
     private void sendConnectivityChangedEvent() {
         getReactContext()
                 .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
-                .emit("netInfo.networkStatusDidChange", createConnectivityEventMap(null));
+                .emit("netInfo.networkStatusDidChange", createConnectivityEventMap(null, null));
     }
 
-    private WritableMap createConnectivityEventMap(@Nullable final String requestedInterface) {
+    private WritableMap createConnectivityEventMap(@Nullable final String requestedInterface, @Nullable final ReadableMap configuration) {
         WritableMap event = Arguments.createMap();
 
         // Add if WiFi is ON or OFF
@@ -133,7 +134,8 @@ abstract class ConnectivityReceiver {
 
         // Add the details, if there are any
         String detailsInterface = requestedInterface != null ? requestedInterface : mConnectionType.label;
-        WritableMap details = createDetailsMap(detailsInterface);
+        boolean shouldSkipWifiDetails = configuration.getBoolean("skipWifiDetails");
+        WritableMap details = createDetailsMap(detailsInterface, shouldSkipWifiDetails);
         if (isConnected) {
             boolean isConnectionExpensive =
                     ConnectivityManagerCompat.isActiveNetworkMetered(getConnectivityManager());
@@ -144,7 +146,7 @@ abstract class ConnectivityReceiver {
         return event;
     }
 
-    private WritableMap createDetailsMap(@Nonnull String detailsInterface) {
+    private WritableMap createDetailsMap(@Nonnull String detailsInterface, @Nonnull boolean shouldSkipWifiDetails) {
         WritableMap details = Arguments.createMap();
         switch (detailsInterface) {
             case "cellular":
@@ -163,28 +165,29 @@ abstract class ConnectivityReceiver {
                 if (NetInfoUtils.isAccessWifiStatePermissionGranted(getReactContext())) {
                     WifiInfo wifiInfo = mWifiManager.getConnectionInfo();
                     if (wifiInfo != null) {
-                        // Get the SSID
-                        try {
-                            String initialSSID = wifiInfo.getSSID();
-                            if (initialSSID != null && !initialSSID.contains("<unknown ssid>")) {
-                                // Strip the quotes, if any
-                                String ssid = initialSSID.replace("\"", "");
-                                details.putString("ssid", ssid);
+                        if (shouldSkipWifiDetails == false) {
+                            // Get the SSID
+                            try {
+                                String initialSSID = wifiInfo.getSSID();
+                                if (initialSSID != null && !initialSSID.contains("<unknown ssid>")) {
+                                    // Strip the quotes, if any
+                                    String ssid = initialSSID.replace("\"", "");
+                                    details.putString("ssid", ssid);
+                                }
+                            } catch (Exception e) {
+                                // Ignore errors
                             }
-                        } catch (Exception e) {
-                            // Ignore errors
-                        }
 
-                        // Get the BSSID
-                        try {
-                            String bssid = wifiInfo.getBSSID();
-                            if (bssid != null) {
-                                details.putString("bssid", bssid);
+                            // Get the BSSID
+                            try {
+                                String bssid = wifiInfo.getBSSID();
+                                if (bssid != null) {
+                                    details.putString("bssid", bssid);
+                                }
+                            } catch (Exception e) {
+                                // Ignore errors
                             }
-                        } catch (Exception e) {
-                            // Ignore errors
                         }
-
 
                         // Get/parse the wifi signal strength
                         try {
