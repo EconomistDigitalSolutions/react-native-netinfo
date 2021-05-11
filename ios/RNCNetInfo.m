@@ -82,27 +82,28 @@ RCT_EXPORT_MODULE()
 - (void)connectionStateWatcher:(RNCConnectionStateWatcher *)connectionStateWatcher didUpdateState:(RNCConnectionState *)state
 {
   if (self.isObserving) {
-    NSDictionary *dictionary = [self currentDictionaryFromUpdateState:state withInterface:NULL];
+    // TODO: Fix withConfiguration here as this will still cause a leak.
+    NSDictionary *dictionary = [self currentDictionaryFromUpdateState:state withInterface:NULL withConfiguration:NULL];
     [self sendEventWithName:@"netInfo.networkStatusDidChange" body:dictionary];
   }
 }
 
 #pragma mark - Public API
 
-RCT_EXPORT_METHOD(getCurrentState:(nullable NSString *)requestedInterface resolve:(RCTPromiseResolveBlock)resolve
+RCT_EXPORT_METHOD(getCurrentState:(nullable NSString *)requestedInterface configuration:(NSDictionary *)configuration resolve:(RCTPromiseResolveBlock)resolve
                   reject:(__unused RCTPromiseRejectBlock)reject)
 {
   RNCConnectionState *state = [self.connectionStateWatcher currentState];
-  resolve([self currentDictionaryFromUpdateState:state withInterface:requestedInterface]);
+    resolve([self currentDictionaryFromUpdateState:state withInterface:requestedInterface withConfiguration: configuration]);
 }
 
 #pragma mark - Utilities
 
 // Converts the state into a dictionary to send over the bridge
-- (NSDictionary *)currentDictionaryFromUpdateState:(RNCConnectionState *)state withInterface:(nullable NSString *)requestedInterface
+- (NSDictionary *)currentDictionaryFromUpdateState:(RNCConnectionState *)state withInterface:(nullable NSString *)requestedInterface withConfiguration:(nullable NSDictionary *)configuration
 {
   NSString *selectedInterface = requestedInterface ?: state.type;
-  NSMutableDictionary *details = [self detailsFromInterface:selectedInterface withState:state];
+  NSMutableDictionary *details = [self detailsFromInterface:selectedInterface withState:state withConfiguration:configuration];
   bool connected = [state.type isEqualToString:selectedInterface] && state.connected;
   if (connected) {
     details[@"isConnectionExpensive"] = @(state.expensive);
@@ -115,7 +116,7 @@ RCT_EXPORT_METHOD(getCurrentState:(nullable NSString *)requestedInterface resolv
   };
 }
 
-- (NSMutableDictionary *)detailsFromInterface:(nonnull NSString *)requestedInterface withState:(RNCConnectionState *)state
+- (NSMutableDictionary *)detailsFromInterface:(nonnull NSString *)requestedInterface withState:(RNCConnectionState *)state withConfiguration:(nullable NSDictionary *)configuration
 {
   NSMutableDictionary *details = [NSMutableDictionary new];
   if ([requestedInterface isEqualToString: RNCConnectionTypeCellular]) {
@@ -125,8 +126,14 @@ RCT_EXPORT_METHOD(getCurrentState:(nullable NSString *)requestedInterface resolv
     details[@"ipAddress"] = [self ipAddress] ?: NSNull.null;
     details[@"subnet"] = [self subnet] ?: NSNull.null;
     #if !TARGET_OS_TV && !TARGET_OS_OSX
-    details[@"ssid"] = [self ssid] ?: NSNull.null;
-    details[@"bssid"] = [self bssid] ?: NSNull.null;
+    BOOL shouldSkipWifiDetails = [[configuration objectForKey:@"skipWifiDetails"] boolValue];
+    if (shouldSkipWifiDetails) {
+      details[@"ssid"] =  NSNull.null;
+      details[@"bssid"] = NSNull.null;
+    } else {
+      details[@"ssid"] =  [self ssid] ?: NSNull.null;
+      details[@"bssid"] = [self bssid] ?: NSNull.null;
+    }
     #endif
   }
   return details;
