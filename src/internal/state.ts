@@ -7,7 +7,7 @@
  * @format
  */
 
-import {NativeEventSubscription} from 'react-native';
+import {NativeEventSubscription, Platform} from 'react-native';
 import NativeInterface from './nativeInterface';
 import InternetReachability from './internetReachability';
 import * as Types from './types';
@@ -71,10 +71,19 @@ export default class State {
   private _fetchCurrentState = async (
     requestedInterface?: string,
   ): Promise<Types.NetInfoState> => {
-    const state = await NativeInterface.getCurrentState(
-      requestedInterface,
-      this._configuration,
-    );
+    /**
+     * Due to memory leak in iOS, we pass in the configuration to detect whether we want the SSID / BSSID details.
+     * See: https://github.com/react-native-netinfo/react-native-netinfo/issues/420
+     */
+    let state: PrivateTypes.NetInfoNativeModuleState;
+    if (Platform.OS === 'ios') {
+      state = await NativeInterface.getCurrentState(
+        requestedInterface,
+        this._configuration,
+      );
+    } else {
+      state = await NativeInterface.getCurrentState(requestedInterface);
+    }
 
     // Update the internet reachability module
     this._internetReachability.update(state);

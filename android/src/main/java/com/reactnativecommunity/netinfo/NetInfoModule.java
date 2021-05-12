@@ -11,7 +11,6 @@ import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
-import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.module.annotations.ReactModule;
 
 /** Module that monitors and provides information about the connectivity state of the device. */
@@ -52,8 +51,8 @@ public class NetInfoModule extends ReactContextBaseJavaModule implements AmazonF
     }
 
     @ReactMethod
-    public void getCurrentState(final String requestedInterface, final ReadableMap configuration, final Promise promise) {
-        mConnectivityReceiver.getCurrentState(requestedInterface, configuration, promise);
+    public void getCurrentState(final String requestedInterface, final Promise promise) {
+        mConnectivityReceiver.getCurrentState(requestedInterface, promise);
     }
 
     @Override
