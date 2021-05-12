@@ -67,8 +67,12 @@ export default class State {
 
   private _fetchCurrentState = async (
     requestedInterface?: string,
+    configuration?: Partial<Types.NetInfoConfiguration>,
   ): Promise<Types.NetInfoState> => {
-    const state = await NativeInterface.getCurrentState(requestedInterface);
+    const state = await NativeInterface.getCurrentState(
+      requestedInterface,
+      configuration,
+    );
 
     // Update the internet reachability module
     this._internetReachability.update(state);
