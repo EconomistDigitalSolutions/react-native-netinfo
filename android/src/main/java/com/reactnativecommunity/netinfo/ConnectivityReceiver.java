@@ -134,7 +134,7 @@ abstract class ConnectivityReceiver {
 
         // Add the details, if there are any
         String detailsInterface = requestedInterface != null ? requestedInterface : mConnectionType.label;
-        boolean shouldSkipWifiDetails = configuration.getBoolean("skipWifiDetails");
+        boolean shouldSkipWifiDetails = configuration != null && configuration.getBoolean("skipWifiDetails");
         WritableMap details = createDetailsMap(detailsInterface, shouldSkipWifiDetails);
         if (isConnected) {
             boolean isConnectionExpensive =
