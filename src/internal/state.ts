@@ -18,6 +18,7 @@ export default class State {
   private _subscriptions = new Set<Types.NetInfoChangeHandler>();
   private _latestState: Types.NetInfoState | null = null;
   private _internetReachability: InternetReachability;
+  private _configuration: Types.NetInfoConfiguration;
 
   constructor(configuration: Types.NetInfoConfiguration) {
     // Add the listener to the internet connectivity events
@@ -31,6 +32,8 @@ export default class State {
       PrivateTypes.DEVICE_CONNECTIVITY_EVENT,
       this._handleNativeStateUpdate,
     );
+
+    this._configuration = configuration;
 
     // Fetch the current state from the native module
     this._fetchCurrentState();
@@ -67,11 +70,10 @@ export default class State {
 
   private _fetchCurrentState = async (
     requestedInterface?: string,
-    configuration?: Partial<Types.NetInfoConfiguration>,
   ): Promise<Types.NetInfoState> => {
     const state = await NativeInterface.getCurrentState(
       requestedInterface,
-      configuration,
+      this._configuration,
     );
 
     // Update the internet reachability module
