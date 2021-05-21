@@ -79,11 +79,10 @@ RCT_EXPORT_MODULE()
 
 #pragma mark - RNCConnectionStateWatcherDelegate
 
-- (void)connectionStateWatcher:(RNCConnectionStateWatcher *)connectionStateWatcher didUpdateState:(RNCConnectionState *)state
+- (void)connectionStateWatcher:(RNCConnectionStateWatcher *)connectionStateWatcher didUpdateState:(RNCConnectionState *)state withConfiguration:(nullable NSDictionary *)configuration
 {
   if (self.isObserving) {
-    // TODO: Fix withConfiguration here as this will still cause a leak.
-    NSDictionary *dictionary = [self currentDictionaryFromUpdateState:state withInterface:NULL withConfiguration:NULL];
+    NSDictionary *dictionary = [self currentDictionaryFromUpdateState:state withInterface:NULL withConfiguration:configuration];
     [self sendEventWithName:@"netInfo.networkStatusDidChange" body:dictionary];
   }
 }
@@ -93,7 +92,7 @@ RCT_EXPORT_MODULE()
 RCT_EXPORT_METHOD(getCurrentState:(nullable NSString *)requestedInterface configuration:(NSDictionary *)configuration resolve:(RCTPromiseResolveBlock)resolve
                   reject:(__unused RCTPromiseRejectBlock)reject)
 {
-  RNCConnectionState *state = [self.connectionStateWatcher currentState];
+  RNCConnectionState *state = [self.connectionStateWatcher currentState withConfiguration:configuration];
     resolve([self currentDictionaryFromUpdateState:state withInterface:requestedInterface withConfiguration: configuration]);
 }
 
