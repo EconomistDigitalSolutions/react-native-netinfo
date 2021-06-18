@@ -143,7 +143,12 @@ RCT_EXPORT_METHOD(getCurrentState:(nullable NSString *)requestedInterface config
 #if (TARGET_OS_TV || TARGET_OS_OSX)
   return nil;
 #else
-  CTTelephonyNetworkInfo *netinfo = [[CTTelephonyNetworkInfo alloc] init];
+  static CTTelephonyNetworkInfo *netinfo;
+  static dispatch_once_t onceToken;
+  dispatch_once(&onceToken, ^{
+      netinfo = [[CTTelephonyNetworkInfo alloc] init];
+  });
+
   CTCarrier *carrier = [netinfo subscriberCellularProvider];
   return carrier.carrierName;
 #endif

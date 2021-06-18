@@ -46,7 +46,12 @@
             _type = RNCConnectionTypeCellular;
             _expensive = true;
             
-            CTTelephonyNetworkInfo *netinfo = [[CTTelephonyNetworkInfo alloc] init];
+            static CTTelephonyNetworkInfo *netinfo;
+            static dispatch_once_t onceToken;
+            dispatch_once(&onceToken, ^{
+                netinfo = [[CTTelephonyNetworkInfo alloc] init];
+            });
+
             if (netinfo) {
                 if ([netinfo.currentRadioAccessTechnology isEqualToString:CTRadioAccessTechnologyGPRS] ||
                     [netinfo.currentRadioAccessTechnology isEqualToString:CTRadioAccessTechnologyEdge] ||
