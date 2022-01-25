@@ -102,9 +102,9 @@ export function useNetInfo(
     details: null,
   });
 
-  // useEffect((): (() => void) => {
-  //   return addEventListener(setNetInfo);
-  // }, []);
+  useEffect((): (() => void) => {
+    return addEventListener(setNetInfo);
+  }, []);
 
   return netInfo;
 }
