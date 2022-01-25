@@ -10,6 +10,7 @@
 import {useState, useEffect} from 'react';
 import DEFAULT_CONFIGURATION from './internal/defaultConfiguration';
 import State from './internal/state';
+import NetInfo from "./"
 import * as Types from './internal/types';
 
 // Stores the currently used configuration
@@ -93,17 +94,17 @@ export function useNetInfo(
   if (configuration) {
     configure(configuration);
   }
-
+  
   const [netInfo, setNetInfo] = useState<Types.NetInfoState>({
     type: Types.NetInfoStateType.unknown,
-    isConnected: null,
+    isConnected: fetch(),
     isInternetReachable: null,
     details: null,
   });
 
-  useEffect((): (() => void) => {
-    return addEventListener(setNetInfo);
-  }, []);
+  // useEffect((): (() => void) => {
+  //   return addEventListener(setNetInfo);
+  // }, []);
 
   return netInfo;
 }
